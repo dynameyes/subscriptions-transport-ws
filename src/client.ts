@@ -66,6 +66,8 @@ export interface ClientOptions {
   connectionCallback?: (error: Error[], result?: any) => void;
   lazy?: boolean;
   inactivityTimeout?: number;
+  customParserRequest?: (value: any, operations?: any) => any;
+  customParserResponse?: (value: any, operations?: any) => any;
 }
 
 export class SubscriptionClient {
@@ -94,6 +96,8 @@ export class SubscriptionClient {
   private maxConnectTimeoutId: any;
   private middlewares: Middleware[];
   private maxConnectTimeGenerator: any;
+  private customParserRequest: (value: any, operations?: any) => any;
+  private customParserResponse: (value: any, operations?: any) => any;
 
   constructor(
     url: string,
@@ -109,6 +113,8 @@ export class SubscriptionClient {
       reconnectionAttempts = Infinity,
       lazy = false,
       inactivityTimeout = 0,
+      customParserResponse = (response: any) => response,
+      customParserRequest = (request: any) => request,
     } = (options || {});
 
     this.wsImpl = webSocketImpl || NativeWebSocket;
@@ -135,6 +141,8 @@ export class SubscriptionClient {
     this.client = null;
     this.maxConnectTimeGenerator = this.createMaxConnectTimeGenerator();
     this.connectionParams = this.getConnectionParams(connectionParams);
+    this.customParserResponse = customParserResponse;
+    this.customParserRequest = customParserRequest;
 
     if (!this.lazy) {
       this.connect();
@@ -457,7 +465,7 @@ export class SubscriptionClient {
   }
 
   private sendMessage(id: string, type: string, payload: any) {
-    this.sendMessageRaw(this.buildMessage(id, type, payload));
+    this.sendMessageRaw(this.customParserRequest(this.buildMessage(id, type, payload), this.operations[id]));
   }
 
   // send message, or queue it if connection is not open
@@ -592,6 +600,8 @@ export class SubscriptionClient {
     } catch (e) {
       throw new Error(`Message must be JSON-parseable. Got: ${receivedData}`);
     }
+
+    parsedMessage = this.customParserResponse(parsedMessage, this.operations[opId]);
 
     if (
       [ MessageTypes.GQL_DATA,
