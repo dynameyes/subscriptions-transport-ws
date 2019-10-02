@@ -68,6 +68,7 @@ export interface ClientOptions {
   inactivityTimeout?: number;
   customParserRequest?: (value: any, operations?: any) => any;
   customParserResponse?: (value: any, operations?: any) => any;
+  dontUseProtocol?: boolean;
 }
 
 export class SubscriptionClient {
@@ -98,6 +99,7 @@ export class SubscriptionClient {
   private maxConnectTimeGenerator: any;
   private customParserRequest: (value: any, operations?: any) => any;
   private customParserResponse: (value: any, operations?: any) => any;
+  private dontUseProtocol?: boolean;
 
   constructor(
     url: string,
@@ -115,6 +117,7 @@ export class SubscriptionClient {
       inactivityTimeout = 0,
       customParserResponse = (response: any) => response,
       customParserRequest = (request: any) => request,
+      dontUseProtocol = false,
     } = (options || {});
 
     this.wsImpl = webSocketImpl || NativeWebSocket;
@@ -143,6 +146,7 @@ export class SubscriptionClient {
     this.connectionParams = this.getConnectionParams(connectionParams);
     this.customParserResponse = customParserResponse;
     this.customParserRequest = customParserRequest;
+    this.dontUseProtocol = dontUseProtocol;
 
     if (!this.lazy) {
       this.connect();
@@ -550,7 +554,7 @@ export class SubscriptionClient {
   }
 
   private connect() {
-    this.client = new this.wsImpl(this.url, this.wsProtocols);
+    this.client = new this.wsImpl(this.url, this.dontUseProtocol ? undefined : this.wsProtocols);
 
     this.checkMaxConnectTimeout();
 
