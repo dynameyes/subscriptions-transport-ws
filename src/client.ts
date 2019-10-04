@@ -469,14 +469,16 @@ export class SubscriptionClient {
   }
 
   private sendMessage(id: string, type: string, payload: any) {
-    this.sendMessageRaw(this.customParserRequest(this.buildMessage(id, type, payload), this.operations[id]));
+    this.sendMessageRaw(this.buildMessage(id, type, payload));
   }
 
   // send message, or queue it if connection is not open
   private sendMessageRaw(message: Object) {
     switch (this.status) {
       case this.wsImpl.OPEN:
-        let serializedMessage: string = JSON.stringify(message);
+        const messageId = message && (message as any).id;
+        const modifiedMessage = this.customParserRequest(message, messageId && this.operations[messageId]);
+        let serializedMessage: string = JSON.stringify(modifiedMessage);
         try {
           JSON.parse(serializedMessage);
         } catch (e) {
