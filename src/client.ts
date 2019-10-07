@@ -11,6 +11,7 @@ import { print } from 'graphql/language/printer';
 import { DocumentNode } from 'graphql/language/ast';
 import { getOperationAST } from 'graphql/utilities/getOperationAST';
 import $$observable from 'symbol-observable';
+import * as uuidV4 from 'uuid/v4';
 
 import { GRAPHQL_WS } from './protocol';
 import { WS_TIMEOUT } from './defaults';
@@ -69,6 +70,7 @@ export interface ClientOptions {
   customParserRequest?: (value: any, operations?: any) => any;
   customParserResponse?: (value: any, operations?: any) => any;
   dontUseProtocol?: boolean;
+  useUuid?: boolean;
 }
 
 export class SubscriptionClient {
@@ -100,6 +102,8 @@ export class SubscriptionClient {
   private customParserRequest: (value: any, operations?: any) => any;
   private customParserResponse: (value: any, operations?: any) => any;
   private dontUseProtocol?: boolean;
+  private useUuid?: boolean;
+  private uuidClientScope?: string;
 
   constructor(
     url: string,
@@ -118,6 +122,7 @@ export class SubscriptionClient {
       customParserResponse = (response: any) => response,
       customParserRequest = (request: any) => request,
       dontUseProtocol = false,
+      useUuid = false,
     } = (options || {});
 
     this.wsImpl = webSocketImpl || NativeWebSocket;
@@ -147,6 +152,8 @@ export class SubscriptionClient {
     this.customParserResponse = customParserResponse;
     this.customParserRequest = customParserRequest;
     this.dontUseProtocol = dontUseProtocol;
+    this.useUuid = useUuid;
+    this.uuidClientScope = useUuid ? uuidV4() : undefined;
 
     if (!this.lazy) {
       this.connect();
@@ -500,6 +507,9 @@ export class SubscriptionClient {
   }
 
   private generateOperationId(): string {
+    if (this.uuidClientScope) {
+      return `${this.uuidClientScope}__${String(++this.nextOperationId)}`;
+    }
     return String(++this.nextOperationId);
   }
 
