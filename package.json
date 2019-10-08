@@ -1,12 +1,15 @@
 {
-  "name": "@engrjabi/subscriptions-transport-ws",
+  "name": "@dynameyes/subscriptions-transport-ws",
   "version": "0.9.22",
   "description": "A websocket transport for GraphQL subscriptions",
   "main": "dist/index.js",
   "browser": "dist/client.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/apollostack/subscriptions-transport-ws.git"
+    "url": "git+https://github.com/dynameyes/subscriptions-transport-ws.git"
+  },
+  "publishConfig": {
+    "registry":"https://package.dms.fyi/"
   },
   "dependencies": {
     "@types/uuid": "^3.4.5",
