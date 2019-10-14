@@ -1,6 +1,6 @@
 {
   "name": "@dynameyes/subscriptions-transport-ws",
-  "version": "0.9.22",
+  "version": "0.9.23",
   "description": "A websocket transport for GraphQL subscriptions",
   "main": "dist/index.js",
   "browser": "dist/client.js",
@@ -9,7 +9,7 @@
     "url": "git+https://github.com/dynameyes/subscriptions-transport-ws.git"
   },
   "publishConfig": {
-    "registry":"https://package.dms.fyi/"
+    "registry": "https://package.dms.fyi/"
   },
   "dependencies": {
     "@types/uuid": "^3.4.5",

@@ -2,7 +2,7 @@
 
 # subscriptions-transport-ws
 
-**(Work in progress!)**
+***Additional API's added are only for the SubscriptionClient. See SubscriptionClient API docs section for more info***
 
 A GraphQL WebSocket server and client to facilitate GraphQL queries, mutations and subscriptions over WebSocket.
 
@@ -243,6 +243,13 @@ ReactDOM.render(
   * `reconnectionAttempts?: number` : how much reconnect attempts
   * `connectionCallback?: (error) => {}` : optional, callback that called after the first init message, with the error (if there is one)
   * `inactivityTimeout?: number` : how long the client should wait in ms, when there are no active subscriptions, before disconnecting from the server. Set to 0 to disable this behavior. (default 0)
+
+  * **START OF Custom API Added by the Fork**
+  * `useUuid?: boolean` : A flag that tells the library to use uuid to have an identifier of websocket connection per browser or per browser tab. Useful if the server needs a way to identify different websocket messages from different tabs or browser of the same user. (default: false)
+  * `dontUseProtocol?: boolean` : A flag to be able to disable custom websocket Subprotocol in case your websocket server does not support it. (default: false)
+  * `customParserRequest?: (value: any, operations?: any) => any` : a middleware function that allows the dev to do some processing before sending the message to the websocket server. Useful if the app needs to do some processing like parsing a graphQL document so the server can read it without knowing how to parse a graphQL document (default: value => value)
+  * `customParserResponse?: (value: any, operations?: any) => any` : a middleware function that allows the dev to do some processing before handling the response to a graphQL client. Useful if the app needs to do some processing like converting a custom message format to a format that is compliant with the graphQL client being used. So it can be properly processed just like any other graphQL response even if the server did not return a graphQL formatted response (default: value => value)
+  * **END OF Custom API Added by the Fork**
 - `webSocketImpl?: Object` - optional, constructor for W3C compliant WebSocket implementation. Use this when your environment does not have a built-in native WebSocket (for example, with NodeJS client)
 
 ### Methods
