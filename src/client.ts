@@ -71,12 +71,14 @@ export interface ClientOptions {
   customParserResponse?: (value: any, operations?: any) => any;
   dontUseProtocol?: boolean;
   useUuid?: boolean;
+  serverAcknowledge?: boolean;
 }
 
 export class SubscriptionClient {
   public client: any;
   public operations: Operations;
   private url: string;
+  private serverAcknowledge: boolean;
   private nextOperationId: number;
   private connectionParams: Function;
   private wsTimeout: number;
@@ -123,6 +125,7 @@ export class SubscriptionClient {
       customParserRequest = (request: any) => request,
       dontUseProtocol = false,
       useUuid = false,
+      serverAcknowledge = false,
     } = (options || {});
 
     this.wsImpl = webSocketImpl || NativeWebSocket;
@@ -154,6 +157,7 @@ export class SubscriptionClient {
     this.dontUseProtocol = dontUseProtocol;
     this.useUuid = useUuid;
     this.uuidClientScope = useUuid ? uuidV4() : undefined;
+    this.serverAcknowledge = serverAcknowledge;
 
     if (!this.lazy) {
       this.connect();
@@ -256,6 +260,7 @@ export class SubscriptionClient {
   }
 
   public onDisconnected(callback: ListenerFn, context?: any): Function {
+    this.serverAcknowledge = false;
     return this.on('disconnected', callback, context);
   }
 
@@ -481,6 +486,12 @@ export class SubscriptionClient {
 
   // send message, or queue it if connection is not open
   private sendMessageRaw(message: Object) {
+
+    if (!this.serverAcknowledge && message && ((message as any).type) === MessageTypes.GQL_START) {
+      this.unsentMessagesQueue.push(message);
+      return;
+    }
+
     switch (this.status) {
       case this.wsImpl.OPEN:
         const messageId = message && (message as any).id;
@@ -580,11 +591,12 @@ export class SubscriptionClient {
           const connectionParams: ConnectionParams = await this.connectionParams();
 
           // Send CONNECTION_INIT message, no need to wait for connection to success (reduce roundtrips)
+          // In our use case we need to wait for ACK before sending que messages.
           this.sendMessage(undefined, MessageTypes.GQL_CONNECTION_INIT, connectionParams);
-          this.flushUnsentMessagesQueue();
+          // this.flushUnsentMessagesQueue();
         } catch (error) {
           this.sendMessage(undefined, MessageTypes.GQL_CONNECTION_ERROR, error);
-          this.flushUnsentMessagesQueue();
+          // this.flushUnsentMessagesQueue();
         }
       }
     };
@@ -642,10 +654,13 @@ export class SubscriptionClient {
         this.reconnecting = false;
         this.backoff.reset();
         this.maxConnectTimeGenerator.reset();
+        this.serverAcknowledge = true;
 
         if (this.connectionCallback) {
           this.connectionCallback();
         }
+
+        this.flushUnsentMessagesQueue();
         break;
 
       case MessageTypes.GQL_COMPLETE:
