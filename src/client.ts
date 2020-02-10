@@ -12,8 +12,8 @@ import { DocumentNode } from 'graphql/language/ast';
 import { getOperationAST } from 'graphql/utilities/getOperationAST';
 import $$observable from 'symbol-observable';
 import * as uuidV4 from 'uuid/v4';
-import * as _get from 'lodash/get';
-import * as _uniqBy from 'lodash/uniqBy';
+import _get = require('lodash/get');
+import _uniqBy = require('lodash/uniqBy');
 
 import { GRAPHQL_WS } from './protocol';
 import { WS_TIMEOUT } from './defaults';

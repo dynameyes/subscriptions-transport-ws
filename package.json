@@ -1,6 +1,6 @@
 {
   "name": "@dynameyes/subscriptions-transport-ws",
-  "version": "0.9.25",
+  "version": "0.9.26",
   "description": "A websocket transport for GraphQL subscriptions",
   "main": "dist/index.js",
   "browser": "dist/client.js",
@@ -41,7 +41,7 @@
     "@types/chai": "^4.0.0",
     "@types/graphql": "^14.0.0",
     "@types/is-promise": "^2.1.0",
-    "@types/lodash": "^4.14.109",
+    "@types/lodash": "^4.14.149",
     "@types/mocha": "^5.2.5",
     "@types/node": "^8.0.8",
     "@types/sinon": "^5.0.1",
