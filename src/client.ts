@@ -12,6 +12,8 @@ import { DocumentNode } from 'graphql/language/ast';
 import { getOperationAST } from 'graphql/utilities/getOperationAST';
 import $$observable from 'symbol-observable';
 import * as uuidV4 from 'uuid/v4';
+import * as _get from 'lodash/get';
+import * as _uniqBy from 'lodash/uniqBy';
 
 import { GRAPHQL_WS } from './protocol';
 import { WS_TIMEOUT } from './defaults';
@@ -83,6 +85,7 @@ export class SubscriptionClient {
   private connectionParams: Function;
   private wsTimeout: number;
   private unsentMessagesQueue: Array<any>; // queued messages while websocket is opening.
+  private subscriptionQueue: Array<any>; // queued subscription messages
   private reconnect: boolean;
   private reconnecting: boolean;
   private reconnectionAttempts: number;
@@ -140,6 +143,7 @@ export class SubscriptionClient {
     this.nextOperationId = 0;
     this.wsTimeout = timeout;
     this.unsentMessagesQueue = [];
+    this.subscriptionQueue = [];
     this.reconnect = reconnect;
     this.reconnecting = false;
     this.reconnectionAttempts = reconnectionAttempts;
@@ -261,6 +265,7 @@ export class SubscriptionClient {
 
   public onDisconnected(callback: ListenerFn, context?: any): Function {
     this.serverAcknowledge = false;
+    this.unsentMessagesQueue = this.unsentMessagesQueue.concat(this.subscriptionQueue);
     return this.on('disconnected', callback, context);
   }
 
@@ -484,10 +489,32 @@ export class SubscriptionClient {
     this.sendMessageRaw(this.buildMessage(id, type, payload));
   }
 
+  private handleSubscriptionQueue(message: any) {
+     const isStart = _get(message, 'type') === MessageTypes.GQL_START;
+     const isStop = _get(message, 'type') === MessageTypes.GQL_STOP;
+     this.subscriptionQueue = _uniqBy(this.subscriptionQueue, 'id');
+
+     if (isStart) {
+       // Add on Queue
+       this.subscriptionQueue.push(message);
+     }
+
+     if (isStop) {
+       // Remove on Queue
+       this.subscriptionQueue = this.subscriptionQueue.filter(item => item.id !== message.id);
+     }
+  }
+
   // send message, or queue it if connection is not open
   private sendMessageRaw(message: Object) {
+    const isMutation = _get(message, 'payload.query', '').substring(0, 8) === 'mutation';
+    const isSubscription = _get(message, 'payload.query', '').substring(0, 12) === 'subscription';
 
-    if (!this.serverAcknowledge && message && ((message as any).type) === MessageTypes.GQL_START) {
+    if (isSubscription) {
+      this.handleSubscriptionQueue(message);
+    }
+
+    if (!this.serverAcknowledge && message && ((message as any).type) === MessageTypes.GQL_START && !isMutation) {
       this.unsentMessagesQueue.push(message);
       return;
     }
@@ -547,7 +574,8 @@ export class SubscriptionClient {
   }
 
   private flushUnsentMessagesQueue() {
-    this.unsentMessagesQueue.forEach((message) => {
+    const noDuplicateUnsentMessagesQueue = _uniqBy(this.unsentMessagesQueue, 'id');
+    noDuplicateUnsentMessagesQueue.forEach((message) => {
       this.sendMessageRaw(message);
     });
     this.unsentMessagesQueue = [];
